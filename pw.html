@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>陪玩信息展示 | 简洁列表版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5',
+                        secondary: '#F3F4F6',
+                        neutral: '#6B7280',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .list-item-hover {
+                @apply hover:bg-primary/5 transition-colors duration-200;
+            }
+            .content-auto {
+                content-visibility: auto;
+            }
+            .form-input {
+                @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-gray-200;
+            }
+            .form-label {
+                @apply block text-sm font-medium text-gray-700 mb-1;
+            }
+            .tag-item {
+                @apply inline-block px-2 py-1 rounded text-xs mr-2 mb-2 cursor-pointer transition-colors;
+            }
+            .modal-backdrop {
+                @apply fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+    <!-- 页面头部 -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            
+            <div class="flex items-center space-x-4">
+                <h1 class="text-xl font-bold text-primary">
+                    <i class="fa fa-gamepad mr-2"></i>陪玩信息列表
+                </h1>
+                <a href="index.html" class="text-sm bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 transition-colors">
+                    <i class="fa fa-arrow-left mr-1"></i>返回列表
+                </a>
+                <!-- 添加陪玩按钮（初始隐藏） -->
+                <a href="addCont.html" id="addPwBtn" class="text-sm bg-primary text-white px-3 py-1 rounded hover:bg-primary/90 transition-colors hidden">
+                    <i class="fa fa-plus mr-1"></i>添加陪玩
+                </a>
+            </div>
+            <div class="text-sm text-neutral">
+                共 <span class="text-primary font-semibold" id="onlineCount">0</span> 位陪玩在线
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- 筛选栏 -->
+        <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+            <div class="flex flex-wrap gap-3 items-center">
+                <div class="flex items-center">
+                    <label class="text-sm text-neutral mr-2">接单类型：</label>
+                    <select class="px-3 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary" id="serviceTypeFilter">
+                        <option value="all">全部</option>
+                        <option value="mobile">手游</option>
+                        <option value="pc">端游</option>
+                    </select>
+                </div>
+                <div class="flex items-center">
+                    <label class="text-sm text-neutral mr-2">接单时间：</label>
+                    <select class="px-3 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary" id="timeFilter">
+                        <option value="all">全部</option>
+                        <option value="day">白天</option>
+                        <option value="night">夜间</option>
+                        <option value="24h">24小时</option>
+                    </select>
+                </div>
+                <div class="flex-grow flex justify-end">
+                    <input type="text" placeholder="搜索陪玩昵称..." class="px-3 py-1 border border-gray-200 rounded text-sm focus:outline-none focus:ring-1 focus:ring-primary w-64" id="searchInput">
+                </div>
+            </div>
+        </div>
+
+        <!-- 陪玩列表 -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden" id="pwListContainer">
+            <div class="grid grid-cols-12 bg-secondary py-3 px-4 text-sm font-medium text-neutral">
+                <div class="col-span-2">昵称/年龄</div>
+                <div class="col-span-2">接单类型</div>
+                <div class="col-span-2">接单时间</div>
+                <div class="col-span-3">试音视频</div>
+                <div class="col-span-1">主页链接</div>
+            </div>
+            <div id="pwListContent"></div>
+            <div class="flex justify-center mt-8 pb-4" id="paginationContainer"></div>
+        </div>
+    </main>
+
+    <!-- 页面底部 -->
+    <footer class="bg-white mt-12 py-6 border-t border-gray-200">
+        <div class="container mx-auto px-4 text-center text-sm text-neutral">
+            <p>© 2026 笼club 陪玩信息展示平台 | 简洁列表版</p>
+        </div>
+    </footer>
+
+    <script>
+        // DOM元素
+        const onlineCountElement = document.getElementById('onlineCount');
+        const pwListContent = document.getElementById('pwListContent');
+        const paginationContainer = document.getElementById('paginationContainer');
+        const searchInput = document.getElementById('searchInput');
+        const serviceTypeFilter = document.getElementById('serviceTypeFilter');
+        const timeFilter = document.getElementById('timeFilter');
+        const addPwBtn = document.getElementById('addPwBtn');
+
+        // 核心配置
+        const CONFIG = {
+            password: 'coop20261521', // 原始口令
+            isAuth: false, // 是否验证通过
+            pagination: {
+                currentPage: 1,
+                pageSize: 10,
+                totalItems: 0,
+                totalPages: 0,
+                data: []
+            }
+        };
+
+        // 加密/解密算法
+        function encrypt(str) {
+            let offsetStr = '';
+            for (let i = 0; i < str.length; i++) {
+                offsetStr += String.fromCharCode(str.charCodeAt(i) + 3);
+            }
+            return btoa(unescape(encodeURIComponent(offsetStr)));
+        }
+
+        function decrypt(str) {
+            try {
+                const decoded = decodeURIComponent(escape(atob(str)));
+                let originalStr = '';
+                for (let i = 0; i < decoded.length; i++) {
+                    originalStr += String.fromCharCode(decoded.charCodeAt(i) - 3);
+                }
+                return originalStr;
+            } catch (e) {
+                return '';
+            }
+        }
+
+        // 静默验证口令
+        function checkAuth(inputVal) {
+            if (!inputVal) {
+                CONFIG.isAuth = false;
+                addPwBtn.classList.add('hidden');
+                return;
+            }
+            // 匹配原始口令 或 解密后匹配
+            const isMatch = inputVal === CONFIG.password || decrypt(inputVal) === CONFIG.password;
+            CONFIG.isAuth = isMatch;
+            addPwBtn.classList.toggle('hidden', !isMatch);
+        }
+
+        // 视频播放/关闭
+        function playVideo(id) {
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+        }
+
+        function closeVideo(id) {
+            const modal = document.getElementById(id);
+            if (modal) {
+                modal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+                const video = modal.querySelector('video');
+                video && video.pause();
+            }
+        }
+
+        // 点击弹窗外部关闭
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal-backdrop')) {
+                closeVideo(e.target.id);
+            }
+        });
+
+        // 初始化数据
+        function initData() {
+            // 静态数据
+            const staticData = [
+                {
+                    id: 'video1',
+                    nickname: '困宝（少萝/少女偏萝',
+                    age: 28,
+                    services: ['哄睡,语聊,手游,ts语音(k,ts sp(非188,定制录音,定制sp'],
+                    games: ['手瓦,钻石'],
+                    availableTime: '12:00-03:00',
+                    videoUrl: 'https://demo.com/audio1.mp4',
+                    homepageUrl: 'https://demo.com/home1'
+                },
+                {
+                    id: 'video2',
+                    nickname: '拜托（少萝/少女',
+                    age: 24,
+                    services: ['语聊,哄睡,asmr,酒单,纯绿照片单(,手游,端游,ts文字,ts语音(不k,ts语音(k,ts sp(非188,定制录音,定制sp'],
+                    games: ['王者，瓦, 洲, steam游戏'],
+                    availableTime: '全天在线只要有空除了睡觉',
+                    videoUrl: 'https://demo.com/audio2.mp4',
+                    homepageUrl: 'https://demo.com/home2'
+                },
+                {
+                    id: 'video3',
+                    nickname: '青青（少御/御姐',
+                    age: 24,
+                    services: ['语聊,哄睡,asmr,纯绿照片单(,纯绿视频单,酒单,手游,ts文字,ts语音(不k,ts语音(k,定制录音'],
+                    games: ['王者, 铲，单机游戏, steam游戏'],
+                    availableTime: '00:00-12:00',
+                    videoUrl: 'https://demo.com/audio3.mp4',
+                    homepageUrl: 'https://demo.com/home3'
+                }
+            ];
+            // 合并localStorage数据
+            const localData = JSON.parse(localStorage.getItem('pwList') || '[]');
+            CONFIG.pagination.data = [...staticData, ...localData];
+            CONFIG.pagination.totalItems = CONFIG.pagination.data.length;
+            CONFIG.pagination.totalPages = Math.ceil(CONFIG.pagination.totalItems / CONFIG.pagination.pageSize);
+            onlineCountElement.textContent = CONFIG.pagination.totalItems;
+        }
+
+        // 渲染列表
+        function renderList(data) {
+            if (data.length === 0) {
+                pwListContent.innerHTML = `<div class="py-12 text-center text-neutral"><i class="fa fa-search mb-2 text-2xl"></i><p>暂无匹配的陪玩信息</p></div>`;
+                return;
+            }
+            pwListContent.innerHTML = data.map(item => {
+                const serviceTags = item.services.map(s => `<span class="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">${s}</span>`).join('');
+                const gameTags = item.games.map(g => `<span class="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded mt-1">${g}</span>`).join('');
+                const videoHtml = item.videoUrl ? `
+                    <button class="text-primary text-sm flex items-center hover:text-primary/80" onclick="playVideo('${item.id}')">
+                        <i class="fa fa-play-circle mr-1"></i> 播放试音
+                    </button>
+                    <div id="${item.id}" class="modal-backdrop">
+                        <div class="bg-white rounded-lg w-full max-w-lg p-4 relative">
+                            <button onclick="closeVideo('${item.id}')" class="absolute top-2 right-2 text-gray-500 hover:text-gray-800">
+                                <i class="fa fa-times text-xl"></i>
+                            </button>
+                            <video controls class="w-full h-auto">
+                                <source src="${item.videoUrl}" type="video/mp4">浏览器不支持播放
+                            </video>
+                        </div>
+                    </div>
+                ` : '<span class="text-neutral text-sm">暂无试音</span>';
+                const linkHtml = item.homepageUrl ? `<a href="${item.homepageUrl}" target="_blank" class="text-primary text-sm flex items-center hover:text-primary/80"><i class="fa fa-link mr-1"></i> 查看</a>` : '<span class="text-neutral text-sm">暂无链接</span>';
+                
+                return `
+                <div class="grid grid-cols-12 py-4 px-4 border-b border-gray-100 list-item-hover items-center">
+                    <div class="col-span-2">
+                        <div class="font-medium">${item.nickname}</div>
+                        <div class="text-xs text-neutral">${item.age}岁</div>
+                    </div>
+                    <div class="col-span-2">${serviceTags}${gameTags}</div>
+                    <div class="col-span-2 text-sm">${item.availableTime}</div>
+                    <div class="col-span-3">${videoHtml}</div>
+                    <div class="col-span-1">${linkHtml}</div>
+                </div>`;
+            }).join('');
+        }
+
+        // 渲染分页
+        function renderPagination() {
+            const { totalPages, currentPage } = CONFIG.pagination;
+            if (totalPages <= 1) {
+                paginationContainer.innerHTML = '';
+                return;
+            }
+            let pageHtml = `
+                <nav class="inline-flex rounded-md shadow-sm" aria-label="Pagination">
+                    <a href="#" class="relative inline-flex items-center px-3 py-2 text-sm font-medium ${currentPage === 1 ? 'text-gray-400 bg-gray-100 cursor-not-allowed' : 'text-gray-500 bg-white hover:bg-gray-50'}" onclick="changePage(${currentPage - 1})"><i class="fa fa-chevron-left text-xs"></i></a>
+            `;
+            for (let i = 1; i <= totalPages; i++) {
+                pageHtml += `<a href="#" class="relative inline-flex items-center px-4 py-2 text-sm font-medium ${i === currentPage ? 'text-primary bg-primary/5' : 'text-gray-700 bg-white hover:bg-gray-50'}" onclick="changePage(${i})">${i}</a>`;
+            }
+            pageHtml += `
+                    <a href="#" class="relative inline-flex items-center px-3 py-2 text-sm font-medium ${currentPage === totalPages ? 'text-gray-400 bg-gray-100 cursor-not-allowed' : 'text-gray-500 bg-white hover:bg-gray-50'}" onclick="changePage(${currentPage + 1})"><i class="fa fa-chevron-right text-xs"></i></a>
+                </nav>
+            `;
+            paginationContainer.innerHTML = pageHtml;
+        }
+
+        // 切换页码
+        function changePage(pageNum) {
+            const { totalPages } = CONFIG.pagination;
+            if (pageNum < 1 || pageNum > totalPages) return;
+            CONFIG.pagination.currentPage = pageNum;
+            filterData();
+        }
+
+        // 筛选数据（兼顾搜索和口令验证）
+        function filterData() {
+            const keyword = searchInput.value.toLowerCase().trim();
+            const serviceType = serviceTypeFilter.value;
+            const timeType = timeFilter.value;
+
+            // 1. 先执行口令验证（静默）
+            checkAuth(keyword);
+
+            // 2. 再执行昵称搜索筛选
+            let filteredData = [...CONFIG.pagination.data];
+            if (keyword && !CONFIG.isAuth) {
+                filteredData = filteredData.filter(item => item.nickname.toLowerCase().includes(keyword));
+            }
+
+            // 3. 接单类型筛选
+            if (serviceType !== 'all') {
+                filteredData = filteredData.filter(item => {
+                    const servicesStr = item.services.join(',').toLowerCase();
+                    return serviceType === 'mobile' ? servicesStr.includes('手游') : servicesStr.includes('端游');
+                });
+            }
+
+            // 4. 接单时间筛选
+            if (timeType !== 'all') {
+                filteredData = filteredData.filter(item => {
+                    const timeStr = item.availableTime.toLowerCase();
+                    if (timeType === 'day') return timeStr.includes('白天') || (timeStr.includes('12') && !timeStr.includes('00:00'));
+                    if (timeType === 'night') return timeStr.includes('夜间') || timeStr.includes('00:00');
+                    if (timeType === '24h') return timeStr.includes('全天') || timeStr.includes('24小时');
+                    return true;
+                });
+            }
+
+            // 5. 分页处理
+            const { currentPage, pageSize } = CONFIG.pagination;
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageData = filteredData.slice(start, end);
+            
+            // 更新分页总数
+            CONFIG.pagination.totalItems = filteredData.length;
+            CONFIG.pagination.totalPages = Math.ceil(filteredData.length / pageSize);
+
+            renderList(pageData);
+            renderPagination();
+        }
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            initData();
+            filterData();
+            // 绑定搜索和筛选事件
+            searchInput.addEventListener('input', filterData);
+            serviceTypeFilter.addEventListener('change', filterData);
+            timeFilter.addEventListener('change', filterData);
+        });
+    </script>
+</body>
+</html>
