@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>添加陪玩信息 | 简洁列表版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 自定义Tailwind配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5', // 主色调（蓝紫）
+                        secondary: '#F3F4F6', // 背景浅灰
+                        neutral: '#6B7280', // 文本浅灰
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .form-input {
+                @apply w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-gray-200;
+            }
+            .form-label {
+                @apply block text-sm font-medium text-gray-700 mb-1;
+            }
+            .tag-item {
+                @apply inline-flex items-center px-2 py-1 rounded text-xs mr-2 mb-2 cursor-pointer transition-colors;
+            }
+            .tag-delete {
+                @apply ml-1 text-xs opacity-70 hover:opacity-100;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800">
+    <!-- 页面头部 -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-xl font-bold text-primary">
+                    <i class="fa fa-gamepad mr-2"></i>添加陪玩信息
+                </h1>
+                <!-- 返回列表页的链接 -->
+                <a href="pw.html" class="text-sm bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300 transition-colors">
+                    <i class="fa fa-arrow-left mr-1"></i>返回上一页
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="container mx-auto px-4 py-8">
+        <div class="bg-white rounded-lg shadow-sm p-6 max-w-3xl mx-auto">
+            <form id="addPwForm" class="space-y-6">
+                <!-- 基本信息 -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold border-b pb-2">基本信息</h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="nickname" class="form-label">昵称/类型 <span class="text-red-500">*</span></label>
+                            <input type="text" id="nickname" name="nickname" required
+                                class="form-input" placeholder="例如：困宝（少萝/少女偏萝">
+                        </div>
+                        <div>
+                            <label for="age" class="form-label">年龄 <span class="text-red-500">*</span></label>
+                            <input type="number" id="age" name="age" required
+                                class="form-input" min="18" max="60" placeholder="请输入年龄">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 接单信息 -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold border-b pb-2">接单信息</h3>
+                    
+                    <div>
+                        <label class="form-label">接单类型（可多选，最多10个） <span class="text-red-500">*</span></label>
+                        <!-- 自定义添加标签的输入框 -->
+                        <div class="flex items-center mt-2 mb-2">
+                            <input type="text" id="newServiceTag" class="form-input mr-2 w-auto flex-1" placeholder="输入自定义接单类型">
+                            <button type="button" id="addServiceTagBtn" class="px-3 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors text-sm">
+                                <i class="fa fa-plus mr-1"></i>添加
+                            </button>
+                        </div>
+                        <!-- 标签展示区域 -->
+                        <div class="flex flex-wrap mt-2" id="serviceTags">
+                            <span class="tag-item bg-gray-100 text-gray-800 hover:bg-primary/10 hover:text-primary" data-value="语聊">
+                                语聊 <i class="fa fa-times tag-delete"></i>
+                            </span>
+                            <span class="tag-item bg-gray-100 text-gray-800 hover:bg-primary/10 hover:text-primary" data-value="哄睡">
+                                哄睡 <i class="fa fa-times tag-delete"></i>
+                            </span>
+                            <span class="tag-item bg-gray-100 text-gray-800 hover:bg-primary/10 hover:text-primary" data-value="asmr">
+                                asmr <i class="fa fa-times tag-delete"></i>
+                            </span>
+                            <span class="tag-item bg-gray-100 text-gray-800 hover:bg-primary/10 hover:text-primary" data-value="手游">
+                                手游 <i class="fa fa-times tag-delete"></i>
+                            </span>
+                            <span class="tag-item bg-gray-100 text-gray-800 hover:bg-primary/10 hover:text-primary" data-value="端游">
+                                端游 <i class="fa fa-times tag-delete"></i>
+                            </span>
+                            <span class="tag-item bg-gray-100 text-gray-800 hover:bg-primary/10 hover:text-primary" data-value="ts语音">
+                                ts语音 <i class="fa fa-times tag-delete"></i>
+                            </span>
+                            <span class="tag-item bg-gray-100 text-gray-800 hover:bg-primary/10 hover:text-primary" data-value="定制录音">
+                                定制录音 <i class="fa fa-times tag-delete"></i>
+                            </span>
+                            <input type="hidden" id="services" name="services" required>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="form-label">擅长游戏（可多选，最多10个） <span class="text-red-500">*</span></label>
+                        <!-- 自定义添加标签的输入框 -->
+                        <div class="flex items-center mt-2 mb-2">
+                            <input type="text" id="newGameTag" class="form-input mr-2 w-auto flex-1" placeholder="输入自定义游戏名称">
+                            <button type="button" id="addGameTagBtn" class="px-3 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors text-sm">
+                                <i class="fa fa-plus mr-1"></i>添加
+                            </button>
+                        </div>
+                        <!-- 标签展示区域 -->
+                        <div class="flex flex-wrap mt-2" id="gameTags">
+                            <span class="tag-item bg-gray-100 text-gray-800 hover:bg-primary/10 hover:text-primary" data-value="王者">
+                                王者 <i class="fa fa-times tag-delete"></i>
+                            </span>
+                            <span class="tag-item bg-gray-100 text-gray-800 hover:bg-primary/10 hover:text-primary" data-value="瓦罗兰特">
+                                瓦罗兰特 <i class="fa fa-times tag-delete"></i>
+                            </span>
+                            <span class="tag-item bg-gray-100 text-gray-800 hover:bg-primary/10 hover:text-primary" data-value="steam游戏">
+                                steam游戏 <i class="fa fa-times tag-delete"></i>
+                            </span>
+                            <span class="tag-item bg-gray-100 text-gray-800 hover:bg-primary/10 hover:text-primary" data-value="单机游戏">
+                                单机游戏 <i class="fa fa-times tag-delete"></i>
+                            </span>
+                            <span class="tag-item bg-gray-100 text-gray-800 hover:bg-primary/10 hover:text-primary" data-value="英雄联盟">
+                                英雄联盟 <i class="fa fa-times tag-delete"></i>
+                            </span>
+                            <input type="hidden" id="games" name="games" required>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="availableTime" class="form-label">接单时间 <span class="text-red-500">*</span></label>
+                        <input type="text" id="availableTime" name="availableTime" required
+                            class="form-input" placeholder="例如：12:00-03:00 或 全天在线">
+                    </div>
+                </div>
+
+                <!-- 媒体信息（非必填） -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold border-b pb-2">媒体信息（选填）</h3>
+                    
+                    <div>
+                        <label for="videoUrl" class="form-label">试音视频URL</label>
+                        <input type="url" id="videoUrl" name="videoUrl"
+                            class="form-input" placeholder="https://example.com/video.mp4">
+                    </div>
+                    
+                    <div>
+                        <label for="homepageUrl" class="form-label">主页链接</label>
+                        <input type="url" id="homepageUrl" name="homepageUrl"
+                            class="form-input" placeholder="https://example.com/home">
+                    </div>
+                </div>
+
+                <!-- 提交按钮 -->
+                <div class="flex justify-end space-x-3 pt-4 border-t">
+                    <button type="reset" 
+                        class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">
+                        <i class="fa fa-refresh mr-1"></i>重置表单
+                    </button>
+                    <button type="submit" 
+                        class="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors">
+                        <i class="fa fa-save mr-1"></i>保存信息
+                    </button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <!-- 页面底部 -->
+    <footer class="bg-white mt-12 py-6 border-t border-gray-200">
+        <div class="container mx-auto px-4 text-center text-sm text-neutral">
+            <p>© 2026 笼club 陪玩信息展示平台 | 简洁列表版</p>
+        </div>
+    </footer>
+
+    <!-- 核心脚本（仅实现添加功能） -->
+    <script>
+        // DOM元素
+        const addPwForm = document.getElementById('addPwForm');
+        const MAX_TAGS = 10; // 最大标签数量限制
+
+        // 重置标签选择状态
+        function resetTagSelection() {
+            // 重置接单类型标签
+            const serviceTags = document.querySelectorAll('#serviceTags .tag-item');
+            serviceTags.forEach(tag => {
+                tag.classList.remove('bg-primary/10', 'text-primary');
+                tag.classList.add('bg-gray-100', 'text-gray-800');
+            });
+            document.getElementById('services').value = '';
+            
+            // 重置游戏标签
+            const gameTags = document.querySelectorAll('#gameTags .tag-item');
+            gameTags.forEach(tag => {
+                tag.classList.remove('bg-primary/10', 'text-primary');
+                tag.classList.add('bg-gray-100', 'text-gray-800');
+            });
+            document.getElementById('games').value = '';
+        }
+
+        // 创建新标签元素
+        function createTagElement(value) {
+            const tag = document.createElement('span');
+            tag.className = 'tag-item bg-gray-100 text-gray-800 hover:bg-primary/10 hover:text-primary';
+            tag.setAttribute('data-value', value);
+            tag.innerHTML = `${value} <i class="fa fa-times tag-delete"></i>`;
+            return tag;
+        }
+
+        // 添加自定义标签
+        function addCustomTag(inputId, containerId) {
+            const input = document.getElementById(inputId);
+            const container = document.getElementById(containerId);
+            const tagValue = input.value.trim();
+            
+            // 验证输入
+            if (!tagValue) {
+                alert('请输入标签内容');
+                return;
+            }
+            
+            // 检查标签数量
+            const tagCount = container.querySelectorAll('.tag-item').length;
+            if (tagCount >= MAX_TAGS) {
+                alert(`最多只能添加${MAX_TAGS}个标签`);
+                return;
+            }
+            
+            // 检查是否已存在相同标签
+            const existingTags = container.querySelectorAll(`.tag-item[data-value="${tagValue}"]`);
+            if (existingTags.length > 0) {
+                alert('该标签已存在');
+                return;
+            }
+            
+            // 创建并添加新标签
+            const newTag = createTagElement(tagValue);
+            container.insertBefore(newTag, container.lastElementChild);
+            
+            // 绑定标签事件
+            bindTagEvents(newTag);
+            
+            // 清空输入框
+            input.value = '';
+        }
+
+        // 绑定标签的选择和删除事件
+        function bindTagEvents(tagElement) {
+            // 标签选择/取消选择
+            tagElement.addEventListener('click', function(e) {
+                // 阻止事件冒泡到删除按钮
+                if (e.target.classList.contains('tag-delete')) return;
+                
+                const value = this.getAttribute('data-value');
+                const container = this.parentElement;
+                const hiddenInputId = container.id === 'serviceTags' ? 'services' : 'games';
+                const hiddenInput = document.getElementById(hiddenInputId);
+                
+                // 获取当前选中的标签
+                let selectedTags = new Set(hiddenInput.value ? hiddenInput.value.split(',') : []);
+                
+                if (selectedTags.has(value)) {
+                    // 取消选择
+                    selectedTags.delete(value);
+                    this.classList.remove('bg-primary/10', 'text-primary');
+                    this.classList.add('bg-gray-100', 'text-gray-800');
+                } else {
+                    // 选择标签
+                    selectedTags.add(value);
+                    this.classList.remove('bg-gray-100', 'text-gray-800');
+                    this.classList.add('bg-primary/10', 'text-primary');
+                }
+                
+                // 更新隐藏输入框的值
+                hiddenInput.value = Array.from(selectedTags).join(',');
+            });
+            
+            // 标签删除功能
+            const deleteBtn = tagElement.querySelector('.tag-delete');
+            deleteBtn.addEventListener('click', function(e) {
+                e.stopPropagation(); // 阻止触发标签选择事件
+                const tag = this.parentElement;
+                const value = tag.getAttribute('data-value');
+                const container = tag.parentElement;
+                const hiddenInputId = container.id === 'serviceTags' ? 'services' : 'games';
+                const hiddenInput = document.getElementById(hiddenInputId);
+                
+                // 从选中的标签中移除
+                let selectedTags = new Set(hiddenInput.value ? hiddenInput.value.split(',') : []);
+                selectedTags.delete(value);
+                hiddenInput.value = Array.from(selectedTags).join(',');
+                
+                // 删除标签元素
+                tag.remove();
+            });
+        }
+
+        // 初始化标签选择
+        function setupTagSelection(tagContainerId) {
+            const container = document.getElementById(tagContainerId);
+            const tags = container.querySelectorAll('.tag-item');
+            
+            // 为每个标签绑定事件
+            tags.forEach(tag => {
+                bindTagEvents(tag);
+            });
+        }
+
+        // 保存新陪玩数据到localStorage
+        function savePwData(data) {
+            // 生成唯一ID
+            const pwList = JSON.parse(localStorage.getItem('pwList') || '[]');
+            const newId = 'video' + (pwList.length + 4);
+            
+            // 添加ID并保存
+            data.id = newId;
+            pwList.push(data);
+            localStorage.setItem('pwList', JSON.stringify(pwList));
+            
+            return newId;
+        }
+
+        // 初始化标签
+        setupTagSelection('serviceTags');
+        setupTagSelection('gameTags');
+
+        // 绑定添加标签按钮事件
+        document.getElementById('addServiceTagBtn').addEventListener('click', () => {
+            addCustomTag('newServiceTag', 'serviceTags');
+        });
+        
+        document.getElementById('addGameTagBtn').addEventListener('click', () => {
+            addCustomTag('newGameTag', 'gameTags');
+        });
+        
+        // 支持回车添加标签
+        document.getElementById('newServiceTag').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addCustomTag('newServiceTag', 'serviceTags');
+        });
+        
+        document.getElementById('newGameTag').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addCustomTag('newGameTag', 'gameTags');
+        });
+
+        // 表单重置处理
+        addPwForm.addEventListener('reset', function() {
+            // 延迟重置标签（等表单重置完成后）
+            setTimeout(resetTagSelection, 0);
+        });
+
+        // 表单提交处理
+        addPwForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 获取表单数据（处理非必填项）
+            const formData = {
+                nickname: document.getElementById('nickname').value,
+                age: document.getElementById('age').value,
+                services: document.getElementById('services').value.split(',').filter(Boolean),
+                games: document.getElementById('games').value.split(',').filter(Boolean),
+                availableTime: document.getElementById('availableTime').value,
+                videoUrl: document.getElementById('videoUrl').value || '',
+                homepageUrl: document.getElementById('homepageUrl').value || ''
+            };
+            
+            // 简单验证（只验证必填项）
+            if (!formData.services.length || !formData.games.length) {
+                alert('请至少选择一项接单类型和擅长游戏');
+                return;
+            }
+            
+            // 保存到localStorage
+            savePwData(formData);
+            
+            // 提示并跳转回列表页
+            alert('陪玩信息添加成功！即将返回列表页');
+            window.location.href = 'pw.html';
+        });
+
+        // 页面加载时重置标签状态
+        document.addEventListener('DOMContentLoaded', resetTagSelection);
+    </script>
+</body>
+</html>
